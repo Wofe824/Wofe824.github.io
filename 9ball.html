@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>點擊圓形後暫停，並隨機變綠</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let circles = [];
+    const circleDiameter = 150;
+    const circleRadius = circleDiameter / 2;
+    const friction = 0.99;
+    
+    // 追蹤遊戲狀態
+    let isPaused = false;
+    let allCirclesClicked = false;
+    let clickedCount = 0;
+    
+    // 綠色圓形的索引，-1 表示沒有綠色圓形
+    let greenCircleIndex = -1;
+    
+    // 暫停計時器
+    let pauseStartTime = 0;
+    const pauseDuration = 3000;
+
+    // 圓形類別
+    class Circle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = random([-4, 4]);
+        this.vy = random([-4, 4]);
+        this.isClicked = false;
+      }
+
+      move() {
+        this.x += this.vx;
+        this.y += this.vy;
+      }
+
+      checkWalls() {
+        if (this.x + circleRadius > width || this.x - circleRadius < 0) {
+          this.vx *= -1;
+          this.x = constrain(this.x, circleRadius, width - circleRadius);
+        }
+        if (this.y + circleRadius > height || this.y - circleRadius < 0) {
+          this.vy *= -1;
+          this.y = constrain(this.y, circleRadius, height - circleRadius);
+        }
+      }
+
+      display(index) {
+        if (this.isClicked) {
+          // 如果這個圓形是綠色圓形
+          if (index === greenCircleIndex) {
+            fill(0, 255, 0); 
+          } else {
+            // 其他被點擊的圓形是紅色
+            fill(255, 0, 0); 
+          }
+        } else {
+          // 未被點擊的圓形是黑色
+          fill(0); 
+        }
+        noStroke();
+        ellipse(this.x, this.y, circleDiameter);
+      }
+    }
+
+    // 重置遊戲狀態
+    function resetGame() {
+      for (let circle of circles) {
+        circle.isClicked = false;
+      }
+      isPaused = false;
+      allCirclesClicked = false;
+      clickedCount = 0;
+      greenCircleIndex = -1;
+    }
+    
+    // 創建圓形
+    function createCircles() {
+      circles = [];
+      for (let i = 0; i < 5; i++) {
+        let x, y;
+        let overlapping = true;
+        while(overlapping) {
+          x = random(circleRadius, width - circleRadius);
+          y = random(circleRadius, height - circleRadius);
+          overlapping = false;
+          for (let other of circles) {
+            let d = dist(x, y, other.x, other.y);
+            if (d < circleDiameter) {
+              overlapping = true;
+              break;
+            }
+          }
+        }
+        circles.push(new Circle(x, y));
+      }
+    }
+
+    function setup() {
+      createCanvas(1024, 768);
+      createCircles();
+    }
+
+    function draw() {
+      background(255);
+
+      // 如果所有圓形都被點擊，且暫停時間已過，則恢復遊戲
+      if (allCirclesClicked && millis() - pauseStartTime > pauseDuration) {
+        resetGame();
+        return;
+      }
+
+      // 只有在未暫停且未完成所有點擊時，才處理動態
+      if (!isPaused && !allCirclesClicked) {
+        for (let i = 0; i < circles.length; i++) {
+          for (let j = i + 1; j < circles.length; j++) {
+            let circle1 = circles[i];
+            let circle2 = circles[j];
+            let d = dist(circle1.x, circle1.y, circle2.x, circle2.y);
+            if (d < circleDiameter) {
+              handleCollision(circle1, circle2);
+            }
+          }
+        }
+        
+        for (let circle of circles) {
+          circle.move();
+          circle.checkWalls();
+        }
+      }
+
+      for (let i = 0; i < circles.length; i++) {
+        circles[i].display(i);
+      }
+    }
+
+    function mousePressed() {
+      // 如果所有圓形都被點擊，再次點擊時重置遊戲
+      if (allCirclesClicked) {
+        resetGame();
+        return;
+      }
+
+      // 如果畫面已經暫停，點擊無效
+      if (isPaused) {
+        for (let i = 0; i < circles.length; i++) {
+          let circle = circles[i];
+          let d = dist(mouseX, mouseY, circle.x, circle.y);
+          
+          if (d < circleRadius && !circle.isClicked) {
+            circle.isClicked = true;
+            clickedCount++;
+            
+            // 如果所有圓形都被點擊，準備重置遊戲
+            if (clickedCount === circles.length) {
+              allCirclesClicked = true;
+              pauseStartTime = millis();
+            }
+
+            // 如果這是第一次點擊暫停畫面後，且尚未有綠色圓形
+            if (greenCircleIndex === -1) {
+              // 在剩餘的未點擊圓形中隨機選擇一個作為綠色
+              let unclickedCircles = [];
+              for (let j = 0; j < circles.length; j++) {
+                if (!circles[j].isClicked) {
+                  unclickedCircles.push(j);
+                }
+              }
+              // 隨機從未點擊圓形中選一個
+              if (unclickedCircles.length > 0) {
+                greenCircleIndex = unclickedCircles[floor(random(unclickedCircles.length))];
+              }
+            }
+            break;
+          }
+        }
+        return;
+      }
+
+      // 畫面未暫停時，只處理第一次點擊
+      for (let i = 0; i < circles.length; i++) {
+        let circle = circles[i];
+        let d = dist(mouseX, mouseY, circle.x, circle.y);
+        
+        if (d < circleRadius && !circle.isClicked) {
+          isPaused = true;
+          circle.isClicked = true;
+          clickedCount++;
+          break;
+        }
+      }
+    }
+
+    function handleCollision(circle1, circle2) {
+      let dx = circle2.x - circle1.x;
+      let dy = circle2.y - circle1.y;
+      let distanceSquared = dx * dx + dy * dy;
+      let distance = sqrt(distanceSquared);
+      let overlap = circleDiameter - distance;
+      let normalX = dx / distance;
+      let normalY = dy / distance;
+
+      circle1.x -= normalX * overlap / 2;
+      circle1.y -= normalY * overlap / 2;
+      circle2.x += normalX * overlap / 2;
+      circle2.y += normalY * overlap / 2;
+      
+      let tangentX = -normalY;
+      let tangentY = normalX;
+
+      let dotProductNormal1 = circle1.vx * normalX + circle1.vy * normalY;
+      let dotProductTangent1 = circle1.vx * tangentX + circle1.vy * tangentY;
+      let dotProductNormal2 = circle2.vx * normalX + circle2.vy * normalY;
+      let dotProductTangent2 = circle2.vx * tangentX + circle2.vy * tangentY;
+
+      let finalNormal1 = dotProductNormal2;
+      let finalNormal2 = dotProductNormal1;
+      
+      circle1.vx = (tangentX * dotProductTangent1 + normalX * finalNormal1) * friction;
+      circle1.vy = (tangentY * dotProductTangent1 + normalY * finalNormal1) * friction;
+      circle2.vx = (tangentX * dotProductTangent2 + normalX * finalNormal2) * friction;
+      circle2.vy = (tangentY * dotProductTangent2 + normalY * finalNormal2) * friction;
+    }
+  </script>
+</body>
+</html>

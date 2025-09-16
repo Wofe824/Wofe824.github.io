@@ -41,8 +41,8 @@
       constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.vx = random([-4, 4]);
-        this.vy = random([-4, 4]);
+        this.vx = random([-2, 2]);
+        this.vy = random([-2, 2]);
         this.isClicked = false;
       }
 
@@ -64,15 +64,12 @@
 
       display(index) {
         if (this.isClicked) {
-          // 如果這個圓形是綠色圓形
           if (index === greenCircleIndex) {
             fill(0, 255, 0); 
           } else {
-            // 其他被點擊的圓形是紅色
             fill(255, 0, 0); 
           }
         } else {
-          // 未被點擊的圓形是黑色
           fill(0); 
         }
         noStroke();
@@ -80,7 +77,6 @@
       }
     }
 
-    // 重置遊戲狀態
     function resetGame() {
       for (let circle of circles) {
         circle.isClicked = false;
@@ -91,7 +87,6 @@
       greenCircleIndex = -1;
     }
     
-    // 創建圓形
     function createCircles() {
       circles = [];
       for (let i = 0; i < 5; i++) {
@@ -114,20 +109,19 @@
     }
 
     function setup() {
-      createCanvas(1530, 1069);
+      // 這裡就是你修改畫布尺寸的地方
+      createCanvas(1530, 889);
       createCircles();
     }
 
     function draw() {
       background(255);
 
-      // 如果所有圓形都被點擊，且暫停時間已過，則恢復遊戲
       if (allCirclesClicked && millis() - pauseStartTime > pauseDuration) {
         resetGame();
         return;
       }
 
-      // 只有在未暫停且未完成所有點擊時，才處理動態
       if (!isPaused && !allCirclesClicked) {
         for (let i = 0; i < circles.length; i++) {
           for (let j = i + 1; j < circles.length; j++) {
@@ -152,13 +146,11 @@
     }
 
     function mousePressed() {
-      // 如果所有圓形都被點擊，再次點擊時重置遊戲
       if (allCirclesClicked) {
         resetGame();
         return;
       }
 
-      // 如果畫面已經暫停，點擊無效
       if (isPaused) {
         for (let i = 0; i < circles.length; i++) {
           let circle = circles[i];
@@ -168,22 +160,18 @@
             circle.isClicked = true;
             clickedCount++;
             
-            // 如果所有圓形都被點擊，準備重置遊戲
             if (clickedCount === circles.length) {
               allCirclesClicked = true;
               pauseStartTime = millis();
             }
 
-            // 如果這是第一次點擊暫停畫面後，且尚未有綠色圓形
             if (greenCircleIndex === -1) {
-              // 在剩餘的未點擊圓形中隨機選擇一個作為綠色
               let unclickedCircles = [];
               for (let j = 0; j < circles.length; j++) {
                 if (!circles[j].isClicked) {
                   unclickedCircles.push(j);
                 }
               }
-              // 隨機從未點擊圓形中選一個
               if (unclickedCircles.length > 0) {
                 greenCircleIndex = unclickedCircles[floor(random(unclickedCircles.length))];
               }
@@ -194,7 +182,6 @@
         return;
       }
 
-      // 畫面未暫停時，只處理第一次點擊
       for (let i = 0; i < circles.length; i++) {
         let circle = circles[i];
         let d = dist(mouseX, mouseY, circle.x, circle.y);
@@ -240,5 +227,4 @@
     }
   </script>
 </body>
-
 </html>

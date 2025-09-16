@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>點擊圓形後暫停，並隨機變綠</title>
+  <title>iPad 點擊圓形後暫停，並隨機變綠</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <style>
@@ -51,23 +51,31 @@
         this.y += this.vy;
       }
 
+      // 檢查是否與畫布邊緣碰撞並反彈
       checkWalls() {
-        if (this.x + circleRadius > width || this.x - circleRadius < 0) {
+        if (this.x + circleRadius > width) {
           this.vx *= -1;
-          this.x = constrain(this.x, circleRadius, width - circleRadius);
+          this.x = width - circleRadius;
+        } else if (this.x - circleRadius < 0) {
+          this.vx *= -1;
+          this.x = circleRadius;
         }
-        if (this.y + circleRadius > height || this.y - circleRadius < 0) {
+
+        if (this.y + circleRadius > height) {
           this.vy *= -1;
-          this.y = constrain(this.y, circleRadius, height - circleRadius);
+          this.y = height - circleRadius;
+        } else if (this.y - circleRadius < 0) {
+          this.vy *= -1;
+          this.y = circleRadius;
         }
       }
 
       display(index) {
         if (this.isClicked) {
           if (index === greenCircleIndex) {
-            fill(0, 255, 183); 
+            fill(183, 255, 0); 
           } else {
-            fill(255, 0, 0); 
+            fill(255, 0, 130); 
           }
         } else {
           fill(0); 
@@ -77,6 +85,7 @@
       }
     }
 
+    // 重置遊戲狀態
     function resetGame() {
       for (let circle of circles) {
         circle.isClicked = false;
@@ -87,12 +96,14 @@
       greenCircleIndex = -1;
     }
     
+    // 創建圓形
     function createCircles() {
       circles = [];
       for (let i = 0; i < 5; i++) {
         let x, y;
         let overlapping = true;
         while(overlapping) {
+          // 確保圓形生成在畫布範圍內
           x = random(circleRadius, width - circleRadius);
           y = random(circleRadius, height - circleRadius);
           overlapping = false;
@@ -110,7 +121,7 @@
 
     function setup() {
       // 這裡就是你修改畫布尺寸的地方
-      createCanvas(1530, 889);
+      createCanvas(1530, 907);
       createCircles();
     }
 
@@ -228,4 +239,3 @@
   </script>
 </body>
 </html>
-
